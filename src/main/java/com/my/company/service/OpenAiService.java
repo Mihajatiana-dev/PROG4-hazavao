@@ -5,57 +5,104 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClientException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class OpenAiService {
 
+  private static final Logger logger = LoggerFactory.getLogger(OpenAiService.class);
+
   @Value("${openai.api.key}")
   private String apiKey;
 
-  @Value("${openai.api.url}")
+  @Value("${openai.api.url:https://api.openai.com/v1/chat/completions}")
   private String apiUrl;
 
-  private static final String SYSTEM_PROMPT =
-      "Mamaly amin'ny teny malagasy fotsiny. Hazavao amin'ny teny malagasy ilay teny.";
-
   public String getMalagasyDefinition(String word) {
-    RestTemplate restTemplate = new RestTemplate();
-
-    HttpHeaders headers = new HttpHeaders();
-    headers.setBearerAuth(apiKey);
-    headers.setContentType(MediaType.APPLICATION_JSON);
-
-    // Préparation du message système et de l'utilisateur
-    Map<String, Object> systemMessage = Map.of("role", "system", "content", SYSTEM_PROMPT);
-    Map<String, Object> userMessage = Map.of("role", "user", "content", word);
-
-    Map<String, Object> requestBody =
-        Map.of(
-            "model",
-            "gpt-3.5-turbo",
-            "messages",
-            List.of(systemMessage, userMessage),
-            "max_tokens",
-            150,
-            "temperature",
-            0.5);
-
-    HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-
     try {
+      RestTemplate restTemplate = new RestTemplate();
+
+      // Configuration des headers
+      HttpHeaders headers = new HttpHeaders();
+      headers.setBearerAuth(apiKey);
+      headers.setContentType(MediaType.APPLICATION_JSON);
+
+      // Amélioration du prompt pour avoir des définitions plus précises
+      String prompt = String.format(
+              "Hazavao amin'ny teny malagasy fotsiny ny teny '%s'. " +
+                      "Omeo fanazavana fohy sy mazava. Aza mamerina ny teny anglisy.",
+              word
+      );
+
+      Map<String, Object> message = Map.of(
+              "role", "user",
+              "content", prompt
+      );
+
+      Map<String, Object> requestBody = Map.of(
+              "model", "gpt-3.5-turbo",
+              "messages", List.of(message),
+              "max_tokens", 150,
+              "temperature", 0.3,
+              "top_p", 1.0,
+              "frequency_penalty", 0.0,
+              "presence_penalty", 0.0
+      );
+
+      HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+      logger.info("Fangatahana fanazavana ho an'ny teny: {}", word);
+
       ResponseEntity<Map> response = restTemplate.postForEntity(apiUrl, entity, Map.class);
 
       if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
         Map<String, Object> responseBody = response.getBody();
-        List<Map<String, Object>> choices = (List<Map<String, Object>>) responseBody.get("choices");
-        if (choices != null && !choices.isEmpty()) {
-          Map<String, Object> messageObj = (Map<String, Object>) choices.get(0).get("message");
-          return messageObj.get("content").toString().trim();
+
+        // Vérification de la présence des données
+        if (responseBody.containsKey("choices")) {
+          List<Map<String, Object>> choices =
+                  (List<Map<String, Object>>) responseBody.get("choices");
+
+          if (choices != null && !choices.isEmpty()) {
+            Map<String, Object> choice = choices.get(0);
+
+            if (choice.containsKey("message")) {
+              Map<String, Object> messageObj =
+                      (Map<String, Object>) choice.get("message");
+
+              if (messageObj.containsKey("content")) {
+                String definition = messageObj.get("content").toString().trim();
+
+                // Nettoyage de la réponse
+                if (!definition.isEmpty()) {
+                  logger.info("Nahavita fanazavana ho an'ny teny: {}", word);
+                  return definition;
+                }
+              }
+            }
+          }
         }
+
+        // Si la structure de réponse est inattendue
+        logger.warn("Vokatra tsy voafehy avy amin'ny OpenAI ho an'ny teny: {}", word);
+        return "Tsy afaka nahazo fanazavana marina.";
       }
+
+      logger.error("Tsy nahavita ny fangatahana OpenAI. Status: {}",
+              response.getStatusCode());
+      return "Nisy olana tamin'ny serivisy fanazavana.";
+
+    } catch (RestClientException e) {
+      logger.error("Olana tamin'ny fifandraisana amin'ny OpenAI ho an'ny teny '{}': {}",
+              word, e.getMessage());
+      return "Tsy afaka nifandray tamin'ny serivisy fanazavana.";
+
     } catch (Exception e) {
-      return "Nisy olana nahazo fanazavana tamin'ny ChatGPT: " + e.getMessage();
+      logger.error("Olana tsy nampoizina tamin'ny fanazavana ny teny '{}': {}",
+              word, e.getMessage());
+      return "Nisy olana tamin'ny fanazavana ny teny.";
     }
-    return "Tsy afaka nahazo fanazavana tamin'ny ChatGPT.";
   }
 }
