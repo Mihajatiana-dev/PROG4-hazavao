@@ -12,32 +12,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class ObjectMapperTest extends FacadeIT {
   @Autowired ObjectMapper injectedBean;
-
-  // Créez une nouvelle instance SANS le module Java Time pour le test
-  ObjectMapper newInstanceWithoutJavaTimeModule = new ObjectMapper();
+  ObjectMapper newInstance = new ObjectMapper();
 
   SomeClassWithDatetimeField someClassWithDatetimeField =
       new SomeClassWithDatetimeField(Instant.now());
 
   @Test
   void new_instance_throws_on_java_datetime_module() {
-    // Modifiez le format de la chaîne JSON pour correspondre au format attendu
-    String jsonString =
-        "{\"datetimeField\":\"" + someClassWithDatetimeField.getDatetimeField() + "\"}";
-
+    String jsonString = someClassWithDatetimeField.toJsonString();
     assertThrows(
         InvalidDefinitionException.class,
-        () ->
-            newInstanceWithoutJavaTimeModule.readValue(
-                jsonString, SomeClassWithDatetimeField.class));
+        () -> newInstance.readValue(jsonString, SomeClassWithDatetimeField.class));
   }
 
   @Test
   void injected_bean_handles_java_datetime_module() {
-    // Utilisez le même format JSON cohérent
-    String jsonString =
-        "{\"datetimeField\":\"" + someClassWithDatetimeField.getDatetimeField() + "\"}";
-
-    assertDoesNotThrow(() -> injectedBean.readValue(jsonString, SomeClassWithDatetimeField.class));
+    assertDoesNotThrow(
+        () ->
+            injectedBean.readValue(
+                someClassWithDatetimeField.toJsonString(), SomeClassWithDatetimeField.class));
   }
 }
