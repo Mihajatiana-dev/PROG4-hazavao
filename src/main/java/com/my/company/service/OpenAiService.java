@@ -14,22 +14,38 @@ public class OpenAiService {
 
   private static final Logger logger = LoggerFactory.getLogger(OpenAiService.class);
 
-  @Value("${openai.api.key}")
+  @Value("${openai.api.key:}")
   private String apiKey;
 
   @Value("${openai.api.url:https://api.openai.com/v1/chat/completions}")
   private String apiUrl;
 
-  public String getMalagasyDefinition(String word) {
-    try {
-      RestTemplate restTemplate = new RestTemplate();
+  private final RestTemplate restTemplate;
 
+  // Constructeur avec injection de RestTemplate pour faciliter les tests
+  public OpenAiService(RestTemplate restTemplate) {
+    this.restTemplate = restTemplate;
+  }
+
+  // Constructeur par défaut
+  public OpenAiService() {
+    this.restTemplate = new RestTemplate();
+  }
+
+  public String getMalagasyDefinition(String word) {
+    // Vérification de la configuration
+    if (apiKey == null || apiKey.trim().isEmpty()) {
+      logger.warn("OpenAI API key tsy napetraka");
+      return "Tsy afaka nifandray tamin'ny serivisy fanazavana (API key tsy hita).";
+    }
+
+    try {
       // Configuration des headers
       HttpHeaders headers = new HttpHeaders();
       headers.setBearerAuth(apiKey);
       headers.setContentType(MediaType.APPLICATION_JSON);
 
-      // Amélioration du prompt pour avoir des définitions plus précises
+      // Amélioration du prompt pour des définitions plus précises
       String prompt =
           String.format(
               "Hazavao amin'ny teny malagasy fotsiny ny teny '%s'. "
