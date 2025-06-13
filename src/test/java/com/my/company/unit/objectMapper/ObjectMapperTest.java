@@ -21,7 +21,10 @@ public class ObjectMapperTest extends FacadeIT {
 
   @Test
   void new_instance_throws_on_java_datetime_module() {
-    String jsonString = someClassWithDatetimeField.toJsonString();
+    // Modifiez le format de la chaîne JSON pour correspondre au format attendu
+    String jsonString =
+        "{\"datetimeField\":\"" + someClassWithDatetimeField.getDatetimeField() + "\"}";
+
     assertThrows(
         InvalidDefinitionException.class,
         () ->
@@ -31,9 +34,10 @@ public class ObjectMapperTest extends FacadeIT {
 
   @Test
   void injected_bean_handles_java_datetime_module() {
-    assertDoesNotThrow(
-        () ->
-            injectedBean.readValue(
-                someClassWithDatetimeField.toJsonString(), SomeClassWithDatetimeField.class));
+    // Utilisez le même format JSON cohérent
+    String jsonString =
+        "{\"datetimeField\":\"" + someClassWithDatetimeField.getDatetimeField() + "\"}";
+
+    assertDoesNotThrow(() -> injectedBean.readValue(jsonString, SomeClassWithDatetimeField.class));
   }
 }
