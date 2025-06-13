@@ -2,9 +2,9 @@ package com.my.company.endpoint.rest.controller;
 
 import com.my.company.model.DefinitionResponse;
 import com.my.company.service.OpenAiService;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class HazavaoController {
@@ -21,7 +21,7 @@ public class HazavaoController {
       // Validation du paramètre d'entrée
       if (teny == null || teny.trim().isEmpty()) {
         return ResponseEntity.badRequest()
-                .body(new DefinitionResponse("", "Tsy misy teny napetraka"));
+            .body(new DefinitionResponse("", "Tsy misy teny napetraka"));
       }
 
       String fanazavana = openAiService.getMalagasyDefinition(teny.trim());
@@ -32,7 +32,7 @@ public class HazavaoController {
     } catch (Exception e) {
       // Gestion des erreurs
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-              .body(new DefinitionResponse(teny, "Nisy olana tamin'ny fanazavana ny teny"));
+          .body(new DefinitionResponse(teny, "Nisy olana tamin'ny fanazavana ny teny"));
     }
   }
 }
