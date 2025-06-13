@@ -19,4 +19,3 @@ public class HazavaoController {
     return new DefinitionResponse(teny, fanazavana);
   }
 }
-
