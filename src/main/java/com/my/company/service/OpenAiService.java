@@ -16,7 +16,7 @@ public class OpenAiService {
   private String apiUrl;
 
   private static final String SYSTEM_PROMPT =
-          "Mamaly amin'ny teny malagasy fotsiny. Hazavao amin'ny teny malagasy ilay teny.";
+      "Mamaly amin'ny teny malagasy fotsiny. Hazavao amin'ny teny malagasy ilay teny.";
 
   public String getMalagasyDefinition(String word) {
     RestTemplate restTemplate = new RestTemplate();
@@ -26,17 +26,19 @@ public class OpenAiService {
     headers.setContentType(MediaType.APPLICATION_JSON);
 
     // Préparation du message système et de l'utilisateur
-    Map<String, Object> systemMessage =
-            Map.of("role", "system", "content", SYSTEM_PROMPT);
-    Map<String, Object> userMessage =
-            Map.of("role", "user", "content", word);
+    Map<String, Object> systemMessage = Map.of("role", "system", "content", SYSTEM_PROMPT);
+    Map<String, Object> userMessage = Map.of("role", "user", "content", word);
 
     Map<String, Object> requestBody =
-            Map.of(
-                    "model", "gpt-3.5-turbo",
-                    "messages", List.of(systemMessage, userMessage),
-                    "max_tokens", 150,
-                    "temperature", 0.5);
+        Map.of(
+            "model",
+            "gpt-3.5-turbo",
+            "messages",
+            List.of(systemMessage, userMessage),
+            "max_tokens",
+            150,
+            "temperature",
+            0.5);
 
     HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
