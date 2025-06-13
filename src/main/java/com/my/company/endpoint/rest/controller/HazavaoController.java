@@ -14,7 +14,10 @@ public class HazavaoController {
   }
 
   @GetMapping("/hazavao")
-  public DefinitionResponse hazavao(@RequestParam String teny) {
+  public DefinitionResponse hazavao(@RequestParam(required = true) String teny) {
+    if (teny == null || teny.isBlank()) {
+      return new DefinitionResponse("", "Mila manoro teny hohazavaina.");
+    }
     String fanazavana = openAiService.getMalagasyDefinition(teny);
     return new DefinitionResponse(teny, fanazavana);
   }
